@@ -215,7 +215,9 @@ export default class Cell extends HTMLElement {
             throw new TypeError(`The given class must extends Cell`)
         }
 
-        let tagName = customElementDefinition.tagName ?? toSkewerCase(customElementDefinition.prototype.constructor.name)
+        let tagName = customElementDefinition.hasOwnProperty("tagName") ?
+            customElementDefinition.tagName :
+            toSkewerCase(customElementDefinition.prototype.constructor.name)
         if (! tagName) {throw new TypeError("You must define at least one way to name your new element tag")}
         if (! tagName.includes("-")) {tagName = `custom-${tagName}`}
 

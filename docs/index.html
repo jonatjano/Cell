@@ -3,8 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <title>Cell</title>
+    <style>html,body{padding:0;margin:0;}</style>
 </head>
 <body>
-    Welcome to Cell's documentation (WIP)
+    <!-- uses Cells to the excess because I want to -->
+    <script type="module">
+        import Cell from "./Cell.js"
+
+        const WelcomeCell = Cell.register(class Welcome extends Cell {
+            render() {
+                this.body.append("Welcome to Cell's documentation (WIP)")
+            }
+        })
+
+        const TopBarCell = Cell.register(class extends Cell {
+            static tagName = "cell-top-bar"
+            static shadowRootType = "closed"
+            static styleSheet =
+`h1, h6 {
+    display: inline-block;
+}
+button {
+    border:none;
+    background:transparent
+}
+.body {
+    width: 100%;
+    height: 80px;
+    background: #8888FF;
+}
+.body > * {
+    margin: auto;
+    background: #888800;
+}`
+
+            render() {
+                this.fromHTML(
+`<div class="body">
+    <button data-page="home">
+        <!-- <img src="cellIcon"></img> -->
+        <h1>Cell</h1><h6>.js</h6>
+    </button>
+    <button data-page="tutorial">Tutorial</button>
+    <button data-page="api">Api</button>
+    <button data-page="example">Examples</button>
+</div>`
+                )
+                this.body.querySelector("#tutorial")
+            }
+        })
+
+        Cell.register(class Root extends Cell {
+            static attributes = ["data-page"]
+            static shadowRootType = "open"
+            observers = {
+                attributes: {
+                    "data-page": (_,oldPage, newPage) => this.changeShownPage(oldPage, newPage)
+                }
+            }
+            static styleSheet = `
+cell-welcome {
+    display: none;
+}
+
+cell-welcome, cell-top-bar`
+
+            welcomePage = new WelcomeCell()
+            tutorialPage = new WelcomeCell()
+            apiPage = new WelcomeCell()
+            examplePage = new WelcomeCell()
+
+            render() {
+                this.clearBody()
+                this.body.append(
+                    new TopBarCell(),
+                    this.welcomePage,
+                    this.tutorialPage,
+                    this.apiPage,
+                    this.examplePage
+                )
+            }
+
+            changeShownPage(oldPage, newPage) {
+                if (this[oldPage + "Page"]) {
+                    this[oldPage + "Page"].style.display = ""
+                }
+                if (this[newPage + "Page"]) {
+                    this[newPage + "Page"].style.display = "block"
+                }
+            }
+        })
+
+        const root = document.createElement("cell-root")
+        const page = location.hash.substring(1, location.hash.indexOf("?")) || "home"
+        root.setAttribute("data-page", page)
+        // document.body.append(root)
+    </script>
 </body>
 </html>

@@ -200,10 +200,22 @@ export default class Cell extends HTMLElement {
     }
 
     /**
+     * override the content of this.body with the html code provided
+     * @param {string} htmlCode the code provided
+     */
+    fromHTML(htmlCode) {
+        const doc = document.createDocumentFragment()
+        const el = document.createElement("div")
+        el.innerHTML = htmlCode
+        doc.append(...el.childNodes)
+        this.body.append(doc)
+    }
+
+    /**
      * register a new Cell class as an Element
      *  - customElementDefinition.tagName will be modified if needed to be compatible with the HTML customElement standard
      *      - will be transformed to skewer-case using {@link toSkewerCase}
-     *      - if only one word, will prepend "custom-"
+     *      - if only one word, will prepend "cell-"
      *      - spec : https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name
      * @param {class} customElementDefinition a class extending Cell (the class itself, not an instance of it)
      * @throws {TypeError} if customElementDefinition is not a class extending Cell
@@ -219,9 +231,9 @@ export default class Cell extends HTMLElement {
             customElementDefinition.tagName :
             toSkewerCase(customElementDefinition.prototype.constructor.name)
         if (! tagName) {throw new TypeError("You must define at least one way to name your new element tag")}
-        if (! tagName.includes("-")) {tagName = `custom-${tagName}`}
+        if (! tagName.includes("-")) {tagName = `cell-${tagName}`}
 
-        tagName = tagName[0].toLowerCase() + tagName.substring(1)
+        tagName = tagName.toLowerCase()
 
         if (customElementDefinition.shadowRootType !== null && ! ["open", "closed"].includes(customElementDefinition.shadowRootType)) {
             throw new TypeError(`Cell shadowRootType must be "open", "closed" or null`)

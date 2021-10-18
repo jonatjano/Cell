@@ -49,7 +49,17 @@ button {
     <button data-page="example">Examples</button>
 </div>`
                 )
-                this.body.querySelector("#tutorial")
+                this.body.querySelectorAll("button")
+                    .forEach(button => button.addEventListener("click", () => {
+                        this.parentNode.host.dataset.page = button.dataset.page
+                    }))
+/*
+temp0.onclick = ((functionDef) => {
+	const [argsString, body] = functionDef.split("=>", 2)
+	const argsArray = argsString.split(",").map(arg => arg.trim())
+	return new Function(...argsArray, body)
+})(temp0.dataset.ev)
+*/
             }
         })
 
@@ -68,16 +78,22 @@ cell-welcome {
 
 cell-welcome, cell-top-bar`
 
-            welcomePage = new WelcomeCell()
+            homePage = new WelcomeCell()
             tutorialPage = new WelcomeCell()
             apiPage = new WelcomeCell()
             examplePage = new WelcomeCell()
 
+            connectedCallback() {
+                super.connectedCallback()
+                this.dataset.page = "home"
+            }
+
             render() {
+                console.log("rendering root")
                 this.clearBody()
                 this.body.append(
                     new TopBarCell(),
-                    this.welcomePage,
+                    this.homePage,
                     this.tutorialPage,
                     this.apiPage,
                     this.examplePage
@@ -85,6 +101,7 @@ cell-welcome, cell-top-bar`
             }
 
             changeShownPage(oldPage, newPage) {
+                console.log(oldPage, newPage)
                 if (this[oldPage + "Page"]) {
                     this[oldPage + "Page"].style.display = ""
                 }
@@ -95,9 +112,7 @@ cell-welcome, cell-top-bar`
         })
 
         const root = document.createElement("cell-root")
-        const page = location.hash.substring(1, location.hash.indexOf("?")) || "home"
-        root.setAttribute("data-page", page)
-        // document.body.append(root)
+        document.body.append(root)
     </script>
 </body>
 </html>

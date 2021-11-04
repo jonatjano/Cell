@@ -24,9 +24,9 @@ describe("utils", () => {
 
     describe("deepFreeze", () => {
         it("should never throw with any input", () => {
-            expect(() => deepFreeze({})).not.to.throw()
-            expect(() => deepFreeze([])).not.to.throw()
-            expect(() => deepFreeze("")).not.to.throw()
+            expect(() => deepFreeze({a: 1, b: 2, c: 3})).not.to.throw()
+            expect(() => deepFreeze([1, 23, 4])).not.to.throw()
+            expect(() => deepFreeze("fds")).not.to.throw()
             expect(() => deepFreeze(42)).not.to.throw()
             expect(() => deepFreeze(new Date())).not.to.throw()
             expect(() => deepFreeze(true)).not.to.throw()
@@ -34,13 +34,13 @@ describe("utils", () => {
             expect(() => deepFreeze(undefined)).not.to.throw()
         })
         it("should return input object", () => {
-            let obj = {}
+            let obj = {a: 1, b: 2, c: 3}
             expect(deepFreeze(obj)).to.equal(obj)
-            obj = ""
+            obj = "fds"
             expect(deepFreeze(obj)).to.equal(obj)
             obj = 42
             expect(deepFreeze(obj)).to.equal(obj)
-            obj = []
+            obj = [1, 23, 4]
             expect(deepFreeze(obj)).to.equal(obj)
             obj = new Date()
             expect(deepFreeze(obj)).to.equal(obj)
@@ -75,5 +75,14 @@ describe("utils", () => {
             expect(() => {input[0][0][0] = 53}).to.throw(TypeError)
             expect(input[0][0][0]).to.equal(42)
         })
+        it('should work with recursive data', function () {
+            const a = {}
+            a.a = a
+            expect(() => deepFreeze(a)).not.to.throw()
+            const b = {}
+            const c = {b}
+            b.c = c
+            expect(() => deepFreeze(b)).not.to.throw()
+        });
     })
 })

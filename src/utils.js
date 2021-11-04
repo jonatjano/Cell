@@ -14,8 +14,11 @@ export const deepFreeze = obj => {
     if (obj === null || obj === undefined) {
         return obj
     }
-    Object.keys(obj).forEach(key => {
-        obj[key] = deepFreeze(obj[key])
-    })
+    console.log(obj, Object.isFrozen(obj))
+    if (obj instanceof Object && ! Object.isFrozen(obj)) {
+        Object.keys(obj).forEach(key => {
+            obj[key] = deepFreeze(obj[key])
+        })
+    }
     return Object.freeze(obj)
 }

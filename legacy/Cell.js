@@ -85,13 +85,13 @@ export default class Cell extends HTMLElement {
 	get body() { return this._body }
 	/**
      * remove every child of the body
-     * add a <style> with it's content set to class.styleSheet if defined and class.shadowRootType !== null
+     * add a <style> with it's content set to class.stylesheet if defined and class.shadowRootType !== null
      */
 	clearBody() {
 		this._body.innerHTML = ""
-		if (this._body instanceof ShadowRoot && this.__proto__.constructor.styleSheet) {
+		if (this._body instanceof ShadowRoot && this.__proto__.constructor.stylesheet) {
 			const style = document.createElement("style")
-			style.innerHTML = this.__proto__.constructor.styleSheet
+			style.innerHTML = this.__proto__.constructor.stylesheet
 			this._body.appendChild(style)
 		}
 	}

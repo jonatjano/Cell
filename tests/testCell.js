@@ -72,5 +72,25 @@ describe("cell", function () {
 				expect(instance.tagName).to.be.equal(TestTagnameAutoPrependCellIfOneWord.tagName.toUpperCase())
 			})
 		})
+		describe("stylesheet", function () {
+			it("should default to Cell.stylesheet", function () {
+				class TestStylesheetDefault extends Cell {}
+				expect(() => Cell.register(TestStylesheetDefault)).not.to.throw()
+				expect(TestStylesheetDefault.stylesheet).to.be.equal(Cell.stylesheet)
+			})
+			it("should be personnalisable", function () {
+				class TestStylesheetFromAttribute extends Cell {static stylesheet = "body {background: red;}"}
+				expect(() => Cell.register(TestStylesheetFromAttribute)).not.to.throw()
+				let instance = null
+				expect(() => {instance = new TestStylesheetFromAttribute()}).not.to.throw()
+				expect(instance).not.to.be.null
+				expect(TestStylesheetFromAttribute.stylesheet).to.be.instanceof(CSSStyleSheet)
+				expect(TestStylesheetFromAttribute.stylesheet.rules).to.have.lengthOf(1)
+				expect(TestStylesheetFromAttribute.stylesheet.rules[0].selectorText).to.be.equal("body")
+				expect(TestStylesheetFromAttribute.stylesheet.rules[0].style.color).to.be.equal("red")
+			})
+		})
+		describe("template", function () {
+		})
 	})
 })

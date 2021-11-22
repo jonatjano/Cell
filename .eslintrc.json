@@ -3,27 +3,17 @@
         "browser": true,
         "es2021": true
     },
+    "root": true,
     "extends": "eslint:recommended",
     "parserOptions": {
         "ecmaVersion": 13,
         "sourceType": "module"
     },
     "rules": {
-        "indent": [
-            "error",
-            "tab"
-        ],
-        "linebreak-style": [
-            "error",
-            "unix"
-        ],
-        "quotes": [
-            "error",
-            "double"
-        ],
-        "semi": [
-            "error",
-            "never"
-        ]
+        "indent": ["error", "tab", {"SwitchCase": 1}],
+        "linebreak-style": ["error", "unix"],
+        "quotes": ["error", "double"],
+        "semi": ["error", "never"],
+        "no-shadow": ["error", { "builtinGlobals": true }]
     }
 }

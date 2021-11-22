@@ -4,7 +4,7 @@
   "description": "A minimalist js framework",
   "main": "index.js",
   "directories": {
-    "doc": "docs",
+    "doc": "legacy",
     "test": "tests"
   },
   "scripts": {

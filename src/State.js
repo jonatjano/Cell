@@ -1,3 +1,13 @@
+/**
+ * @typedef {Object<string, State~stateChangeCallback | State~stateObserver>} State~stateObserver
+ */
+/**
+ * @callback State~stateChangeCallback
+ * @param {string} propertyName
+ * @param {string} oldValue
+ * @param {string} newValue
+ */
+
 export default class State {
 
 }
@@ -246,7 +256,7 @@ const CellState = class {
 			/**
              * call the callbacks set for this path
              * @param {object} target the object wrapped by the Proxy
-             * @param {string|symbol} prop
+             * @param {string|Symbol} prop
              * @param {*} value the value
              * @return {boolean} true means the set worked
              */

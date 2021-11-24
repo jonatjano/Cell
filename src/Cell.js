@@ -7,7 +7,7 @@ import {deepFreeze, toSkewerCase} from "./utils.js"
  */
 /**
  * @typedef {object} Cell~MultiObserver
- * @property {Object.<string, Node[]>} attributes
+ * @property {Object.<string, (Node | Cell~attributeChangedCallbackType)[]>} attributes
  * @property {Object.<string, State~stateObserver[]>} states
  */
 /**
@@ -185,7 +185,7 @@ export default class Cell extends HTMLElement {
      */
 	attributeChangedCallback(attributeName, oldValue, newValue) {
 		this?.constructor?.observers?.attributes?.[attributeName]?.call?.(this, oldValue, newValue)
-		this?.reactiveObservers?.attributes?.[attributeName]?.forEach(node => node.textContent = newValue)
+		this?.reactiveObservers?.attributes?.[attributeName]?.forEach(entry => typeof entry === "function" ? entry(oldValue, newValue) : entry.textContent = newValue)
 	}
 
 	/**
@@ -257,10 +257,41 @@ export default class Cell extends HTMLElement {
 		} else if (node instanceof HTMLElement) {
 			for (const attr of node.attributes) {
 				attributeRegex.lastIndex = -1
-				// console.log(attr)
-				// while((regexResult = attributeRegex.exec(node.textContent)) !== null) {
-				// 	console.table(regexResult)
-				// }
+				console.log(attr, attr.textContent)
+
+				const text = attr.textContent
+				/**
+				 * @type {{start: number, end: number, type: "attribute" | "removeBackslash", value: string}[]}
+				 */
+				const matched = []
+				while((regexResult = attributeRegex.exec(text)) !== null) {
+					if (! regexResult[1]) {
+						matched.push({start: regexResult.index, end: regexResult.index + regexResult[0].length, type: "attribute", value: regexResult[3]})
+					} else {
+						matched.push({start: regexResult.index, end: regexResult.index + regexResult[0].length, type: "removeBackslash", value: regexResult[0]})
+					}
+				}
+
+				matched.forEach(match => {
+					if (match.type === "attribute") {
+						this.reactiveObservers.attributes[match.value] ??= []
+						this.reactiveObservers.attributes[match.value].push(() => {
+							let builtValue = ""
+							let lastIndex = 0
+							matched.forEach(match2 => {
+								builtValue += text.substring(lastIndex, match2.start)
+								if (match2.type === "attribute") {
+									builtValue += this.getAttribute(match2.value)
+								} else if (match2.type === "removeBackslash") {
+									builtValue += match2.value.substring(1)
+								}
+								lastIndex = match2.end
+							})
+							builtValue += text.substring(lastIndex)
+							node.setAttribute(attr.name, builtValue)
+						})
+					}
+				})
 			}
 		}
 	}

@@ -1,0 +1,8 @@
+GIT_STATUS=$(git status --porcelain)
+
+while n' read -ra FILE; do
+  for i in "${FILE[@]}"; do
+    echo $i
+  done
+done <<< "$GIT_STATUS"
+

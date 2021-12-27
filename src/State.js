@@ -9,8 +9,117 @@
  */
 
 export default class State {
+	static CREATED = Symbol("stateCreated")
+	static DELETED = Symbol("stateDeleted")
 
+	/**
+	 * @type {Map<*, State>}
+	 */
+	static #registry = new Map()
+
+	/**
+	 * @type {Map<*, string[]>}
+	 */
+	#instances = new Map()
+
+	/**
+	 * @type {object}
+	 */
+	#raw
+	/**
+	 *
+	 */
+	#proxied
+
+	/**
+	 * @param {object} object
+	 */
+	constructor(object) {
+		this.#raw = object
+	}
+
+	/**
+	 * get the State proxy
+	 * @return {Proxy}
+	 */
+	get state() {
+		this.#proxied ??= State.#attachProxy(this.#raw)
+		return this.#proxied
+	}
+
+	static get(key) {
+		return this.#registry.get(key)
+	}
+
+	/**
+	 * register a new state for the given key
+	 * if the object is child or parent of an existing state {@link #raw}, will return that state will the link done to the new key
+	 * @param {any} key the State key
+	 * @param {object} object the State object (used as State's {@link raw}
+	 * @param {State~stateObserver} observers the State object (used as State's {@link raw}
+	 * @throws {Error} when the key is already linked to a state
+	 */
+	static register(key, object, observers) {
+		if (State.get(key)) {
+			throw new Error(`Trying to register a State with an already used key`)
+		}
+		let state = State.#getByObject(object)
+		if (state) {
+			return state
+		}
+
+		/*
+		if (object !== State.get(key)?.#raw) {
+			State.unregister(key)
+			let {state, path} = State._getExistingState(object) ?? {}
+			if (state === undefined) {
+
+				let children = State._isParentState(object)
+				if (children.length === 0) {
+					state = new State(object)
+				} else {
+					state = State._createParent(object, children)
+				}
+				path = ""
+			}
+			state._addElement(key, path)
+			State._registry.set(key, state)
+		}
+		*/
+	}
+
+	/**
+	 * remove the link from a Cell to a CellState
+	 * @param {any} key
+	 * @return {boolean}
+	 */
+	static unregister(key) {
+		const currentState = State.get(key)
+		if (currentState) {
+			currentState.#deleteElement(key)
+		}
+		return State.#registry.delete(key)
+	}
+
+	static #getStateList() {
+		return [...new Set(this.#registry.values())]
+	}
+
+	/**
+	 * @param {object} object
+	 */
+	static #getByObject(object) {
+		return State.#getStateList().find(state => state.#raw === object)
+	}
+
+	/**
+	 * @param {any} object
+	 * @return Proxy
+	 */
+	static #attachProxy(object) {}
 }
+
+
 
 /**
  * subclass used for state management
@@ -276,7 +385,7 @@ const CellState = class {
 			/**
              * call the callbacks set for this path
              * @param {object} target the object wrapped by the Proxy
-             * @param {string|symbol} prop
+             * @param {string|Symbol} prop
              * @return {boolean} true means the delete worked
              */
 			handler.deleteProperty = (target, prop) => {

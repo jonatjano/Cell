@@ -6,23 +6,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
 <body>
+<!--    <script type="module">-->
+<!--        import Cell from "./src/Cell.js"-->
+
+<!--        class Test extends Cell {-->
+<!--            static styleSheet = '@import "./other.css"'-->
+<!--            static template = "src/truc.html"-->
+<!--            static attributes = ["my-color", "title", "text", "test"]-->
+
+<!--            static observers = {-->
+<!--				attributes: {-->
+<!--					testa(_,val) {this.body.querySelector("#testa").innerText = `testa: ${val}`}-->
+<!--                }-->
+<!--            }-->
+<!--        }-->
+<!--        Cell.register(Test)-->
+<!--    </script>-->
+
+<!--    <cell-test title="a working title" my-color="blue" text="idk, something, maybe" test="zzrot" testa="testa"></cell-test>-->
+
     <script type="module">
-        import Cell from "./src/Cell.js";
+        import State from "./src/State.js"
 
-        class Test extends Cell {
-            static styleSheet = '@import "./other.css"'
-            static template = "src/truc.html"
-            static attributes = ["my-color", "title", "text", "test"]
 
-            static observers = {
-				attributes: {
-					testa(_,val) {this.body.querySelector("#testa").innerText = `testa: ${val}`}
-                }
-            }
-        }
-        Cell.register(Test)
     </script>
-
-    <cell-test title="a working title" my-color="blue" text="idk, something, maybe" test="zzrot" testa="testa"></cell-test>
 </body>
 </html>

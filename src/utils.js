@@ -8,7 +8,6 @@ export const toSkewerCase = input => input.replaceAll(/[A-Z]/g, (found, i) => (i
 /**
  * deep freeze the input
  * @param {*} obj the value to freeze
- * @param {Map<object, object>} visited the value to freeze
  * @returns {*} the deeply frozen input
  */
 export const deepFreeze = (obj) => {

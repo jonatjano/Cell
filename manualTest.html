@@ -25,10 +25,32 @@
 
 <!--    <cell-test title="a working title" my-color="blue" text="idk, something, maybe" test="zzrot" testa="testa"></cell-test>-->
 
-    <script type="module">
-        import State from "./src/State.js"
+<script type="module">
+    import State from "./src/State.js"
 
+    /**
+     * @type {State~observerTree}
+     */
+    const observers = {
+        1: {
+			[State.leaf]: (nev, old) => console.log(`myObj[1] changed from ${old} to ${nev}`),
+            // 2: (nev, old) => console.log(`myObj[1][2] changed from ${old} to ${nev}`)
+        }
+    }
 
-    </script>
+    const state = State.create({}, observers)
+    globalThis.state = state
+	globalThis.State = State
+    state[1] = {2: "lol"}
+
+	state[1].addObservers({2: (nev, old) => console.log(`myObj[1][2] changed from ${old} to ${nev}`)})
+	// state.addObservers({1: {2: (nev, old) => console.log(`myObj[1][2] changed from ${old} to ${nev}`)}})
+	state[1][2] = "b"
+
+    console.log(state[1] === state[1])
+	console.log(state[1][State.isState])
+	console.log(state[1][State.state])
+
+</script>
 </body>
 </html>

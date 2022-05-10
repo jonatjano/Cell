@@ -12,8 +12,8 @@ import {deepFreeze, toSkewerCase} from "./utils.js"
  */
 /**
  * @callback Cell~attributeChangedCallbackType
- * @param {string} oldValue
  * @param {string} newValue
+ * @param {string} oldValue
  */
 
 const reactiveSlot = Symbol("cellReactiveSlot")
@@ -105,9 +105,6 @@ export default class Cell extends HTMLElement {
 			this.#body.append(this.constructor.template.cloneNode(true))
 		}
 		this.generateReactiveObservers()
-		this.generateReactiveObservers()
-		this.generateReactiveObservers()
-		this.generateReactiveObservers()
 
 		this.state = state
 	}
@@ -184,8 +181,8 @@ export default class Cell extends HTMLElement {
      * @param {string} newValue the attribute's new value
      */
 	attributeChangedCallback(attributeName, oldValue, newValue) {
-		this?.constructor?.observers?.attributes?.[attributeName]?.call?.(this, oldValue, newValue)
-		this?.reactiveObservers?.attributes?.[attributeName]?.forEach(entry => typeof entry === "function" ? entry(oldValue, newValue) : entry.textContent = newValue)
+		this?.constructor?.observers?.attributes?.[attributeName]?.call?.(this, newValue, oldValue)
+		this?.reactiveObservers?.attributes?.[attributeName]?.forEach(entry => typeof entry === "function" ? entry(newValue, oldValue) : entry.textContent = newValue)
 	}
 
 	/**
@@ -315,7 +312,7 @@ export default class Cell extends HTMLElement {
      *      - will be transformed to skewer-case using {@link toSkewerCase}
      *      - if only one word, will prepend "cell-"
      *      - spec : https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name
-     * @param {typeof Cell} customElementDefinition a class extending Cell (the class itself, not an instance of it)
+     * @param {Cell.constructor} customElementDefinition a class extending Cell (the class itself, not an instance of it)
      * @throws {TypeError} if customElementDefinition is not a class extending Cell
      * @throws {TypeError} if shadowRootType is not a valid value
      * @return {Promise<typeof Cell>} the customElementDefinition parameter with the tagName corrected if needed

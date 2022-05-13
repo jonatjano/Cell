@@ -273,11 +273,17 @@ export default class Cell extends HTMLElement {
 					if (match.type === "attribute") {
 						this.reactiveObservers.attributes[match.value] ??= []
 						if (attr.name.startsWith("on") && attr.textContent.trim() === `@A.${match.value}`) {
-							console.log("here")
-							node.addEventListener(attr.name.substring(2), event => {
-								this.setAttribute(match.value, node.value)
+							const eventName = attr.name.substring(2)
+							node.addEventListener(eventName, event => {
+								switch (node.type) {
+									case "color":
+										this.setAttribute(match.value, utils.color2hex(node.value))
+										break
+									default:
+										this.setAttribute(match.value, node.value)
+								}
 							}, {passive: true})
-							node.setAttribute(attr.name, `/* setAttribute(${attr.name}, this.value) */`)
+							node.setAttribute(attr.name, `/* setAttribute(${eventName}, this.value) */`)
 							switch (node.type) {
 								case "color":
 									node.setAttribute("value", utils.color2hex(this.getAttribute(match.value)))

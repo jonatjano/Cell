@@ -1,4 +1,4 @@
-import {deepFreeze, toSkewerCase} from "./utils.js"
+import * as utils from "./utils.js"
 
 /**
  * @typedef {object} Cell~Observer
@@ -129,7 +129,7 @@ export default class Cell extends HTMLElement {
 	}
 
 	/**
-     * @param {{} | null} newState
+     * @param {State | stateProxy | Object | null} newState
      */
 	set state(newState) {
 		// TODO
@@ -201,7 +201,7 @@ export default class Cell extends HTMLElement {
 	 * @return void
 	 */
 	registerReactiveObserversFor(node) {
-		const attributeRegex = /(\\+)?(@([\w-]+))/g
+		const attributeRegex = /(\\+)?(@A.([\w-]+))/g
 		/**
 		 * @type {RegExpExecArray}
 		 */
@@ -272,21 +272,36 @@ export default class Cell extends HTMLElement {
 				matched.forEach(match => {
 					if (match.type === "attribute") {
 						this.reactiveObservers.attributes[match.value] ??= []
-						this.reactiveObservers.attributes[match.value].push(() => {
-							let builtValue = ""
-							let lastIndex = 0
-							matched.forEach(match2 => {
-								builtValue += text.substring(lastIndex, match2.start)
-								if (match2.type === "attribute") {
-									builtValue += this.getAttribute(match2.value)
-								} else if (match2.type === "removeBackslash") {
-									builtValue += match2.value.substring(1)
-								}
-								lastIndex = match2.end
+						if (attr.name.startsWith("on") && attr.textContent.trim() === `@A.${match.value}`) {
+							console.log("here")
+							node.addEventListener(attr.name.substring(2), event => {
+								this.setAttribute(match.value, node.value)
+							}, {passive: true})
+							node.setAttribute(attr.name, `/* setAttribute(${attr.name}, this.value) */`)
+							switch (node.type) {
+								case "color":
+									node.setAttribute("value", utils.color2hex(this.getAttribute(match.value)))
+									break
+								default:
+									node.setAttribute("value", this.getAttribute(match.value))
+							}
+						} else {
+							this.reactiveObservers.attributes[match.value].push(() => {
+								let builtValue = ""
+								let lastIndex = 0
+								matched.forEach(match2 => {
+									builtValue += text.substring(lastIndex, match2.start)
+									if (match2.type === "attribute") {
+										builtValue += this.getAttribute(match2.value)
+									} else if (match2.type === "removeBackslash") {
+										builtValue += match2.value.substring(1)
+									}
+									lastIndex = match2.end
+								})
+								builtValue += text.substring(lastIndex)
+								node.setAttribute(attr.name, builtValue)
 							})
-							builtValue += text.substring(lastIndex)
-							node.setAttribute(attr.name, builtValue)
-						})
+						}
 					}
 				})
 			}
@@ -319,8 +334,8 @@ export default class Cell extends HTMLElement {
      */
 	static async register(customElementDefinition) {
 		let tagName = Object.hasOwn(customElementDefinition, "tagName") ?
-			toSkewerCase(customElementDefinition.tagName) :
-			toSkewerCase(customElementDefinition.prototype.constructor.name)
+			utils.toSkewerCase(customElementDefinition.tagName) :
+			utils.toSkewerCase(customElementDefinition.prototype.constructor.name)
 
 		if (! (customElementDefinition.prototype instanceof Cell)) {
 			throw new TypeError("The given class must extends Cell")
@@ -339,7 +354,7 @@ export default class Cell extends HTMLElement {
 			await importHtml(customElementDefinition.template)
 				.then(result => {
 					Object.defineProperty(customElementDefinition, "template", {
-						value: deepFreeze(result),
+						value: utils.deepFreeze(result),
 						writable: false
 					})
 				})
@@ -349,15 +364,15 @@ export default class Cell extends HTMLElement {
 		const observers = Object.hasOwn(customElementDefinition, "observers") ? customElementDefinition.observers : Cell.observers
 		Object.defineProperties(customElementDefinition, {
 			tagName: {
-				value: deepFreeze(tagName),
+				value: utils.deepFreeze(tagName),
 				writable: false
 			},
 			styleSheet: {
-				value: deepFreeze(styleSheet),
+				value: utils.deepFreeze(styleSheet),
 				writable: false
 			},
 			observers: {
-				value: deepFreeze(observers),
+				value: utils.deepFreeze(observers),
 				writable: false
 			}
 		})

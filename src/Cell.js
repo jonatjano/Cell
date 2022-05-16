@@ -3,12 +3,12 @@ import * as utils from "./utils.js"
 /**
  * @typedef {object} Cell~Observer
  * @property {Object.<string, Cell~attributeChangedCallbackType>} attributes
- * @property {State~stateObserver} states
+ * @property {State~observerTree} states
  */
 /**
  * @typedef {object} Cell~MultiObserver
  * @property {Object.<string, (Node | Cell~attributeChangedCallbackType)[]>} attributes
- * @property {Object.<string, State~stateObserver[]>} states
+ * @property {Object.<string, State~observerMethod[]>} states
  */
 /**
  * @callback Cell~attributeChangedCallbackType
@@ -17,6 +17,20 @@ import * as utils from "./utils.js"
  */
 
 const reactiveSlot = Symbol("cellReactiveSlot")
+
+/**
+ * @param {string} type
+ * @param {any} value
+ * @return {string}
+ */
+function cleanAttributeValue(type, value) {
+	switch (type) {
+		case "color":
+			return utils.color2hex(value)
+		default:
+			return value
+	}
+}
 
 /**
  * import an html document
@@ -200,27 +214,76 @@ export default class Cell extends HTMLElement {
 	 * @param node
 	 * @return void
 	 */
-	registerReactiveObserversFor(node) {
-		const attributeRegex = /(\\+)?(@A.([\w-]+))/g
+	#registerReactiveObserversFor(node) {
+		/**
+		 * example of matches :
+		 * - @A.title
+		 * - \@A.test
+		 * - @S.a.b.c
+		 * - @S[a].b.c
+		 * - @S.a[b][c]
+		 * - \@S.a.b.c
+		 * - \@S[a].b.c
+		 * - \@S.a[b][c]
+		 * @type {RegExp}
+		 */
+		const regex = /(?<hasBackslash>\\)?(?:(?:(?<isState>@S)(?<statePath>(?:(?:\.[\p{Letter}\p{Number}]+)|(?:\[[\p{Letter}\p{Number}]+\]))+;?))|(?:(?<isAttribute>@A)\.(?<attributeName>[\w-]+)))/gu
+
+		/**
+		 * @param {string} text
+		 * @return {{start: number, end: number, type: "attribute" | "state" | "removeBackslash", value: string}[]}
+		 */
+		function applyRegexOn(text) {
+			regex.lastIndex = -1
+			/**
+			 * @type { {{start: number, end: number, type: "attribute" | "state" | "removeBackslash", value: string}[]} }
+			 */
+			const matched = []
+			while((regexResult = regex.exec(text)) !== null) {
+				if (regexResult.groups.hasBackslash) {
+					matched.push({start: regexResult.index, end: regexResult.index + regexResult[0].length, type: "removeBackslash", value: regexResult[0]})
+				} else if (regexResult.groups.isAttribute) {
+					matched.push({start: regexResult.index, end: regexResult.index + regexResult[0].length, type: "attribute", value: regexResult.groups.attributeName})
+				} else if (regexResult.groups.isState) {
+					matched.push({start: regexResult.index, end: regexResult.index + regexResult[0].length, type: "state", value: regexResult.groups.statePath})
+				} else {
+					throw new Error(`Error while parsing, matched unknown construct : "${regexResult[0]}"`)
+				}
+			}
+			return matched
+		}
+
+		/**
+		 * transform an object path with square brackets and a starting dot to one with dots only
+		 * e.g.
+		 * [a].b[c] -> a.b.c
+		 * .a[b].c -> a.b.c
+		 * .a.b.c -> a.b.c
+		 * [a][b][c] -> a.b.c
+		 * @param {string} statePath
+		 * @return {string}
+		 */
+		function cleanStatePath(statePath) {
+			return statePath
+				.replaceAll("]", "")
+				.replaceAll("[", ".")
+				.substring(1)
+		}
+
 		/**
 		 * @type {RegExpExecArray}
 		 */
 		let regexResult
 		if (node instanceof Cell) {
+			// TODO
 			return
 		} else if (node instanceof Text) {
 			const text = node.textContent
 			/**
-			 * @type {{start: number, end: number, type: "attribute" | "removeBackslash", value: string}[]}
+			 * @type {{start: number, end: number, type: "attribute" | "state" | "removeBackslash", value: string}[]}
 			 */
-			const matched = []
-			while((regexResult = attributeRegex.exec(text)) !== null) {
-				if (! regexResult[1]) {
-					matched.push({start: regexResult.index, end: regexResult.index + regexResult[0].length, type: "attribute", value: regexResult[3]})
-				} else {
-					matched.push({start: regexResult.index, end: regexResult.index + regexResult[0].length, type: "removeBackslash", value: regexResult[0]})
-				}
-			}
+			const matched = applyRegexOn(text)
+
 			let lastIndex = 0
 			const func = {
 				attribute: (acc, match) => {
@@ -233,6 +296,19 @@ export default class Cell extends HTMLElement {
 					reactiveNode[reactiveSlot] = true
 					this.reactiveObservers.attributes[match.value] ??= []
 					this.reactiveObservers.attributes[match.value].push(reactiveNode)
+					acc.push(reactiveNode)
+					return acc
+				},
+				state: (acc, match) => {
+					if (lastIndex < match.start) {
+						acc.push(document.createTextNode(text.substring(lastIndex, match.start)))
+					}
+					lastIndex = match.end
+					const reactiveNode = document.createElement("slot")
+					reactiveNode.textContent = cleanStatePath(match.value)
+					reactiveNode[reactiveSlot] = true
+					this.reactiveObservers.states[match.value] ??= []
+					this.reactiveObservers.states[match.value].push(reactiveNode)
 					acc.push(reactiveNode)
 					return acc
 				},
@@ -253,45 +329,51 @@ export default class Cell extends HTMLElement {
 			node.remove()
 		} else if (node instanceof HTMLElement) {
 			for (const attr of node.attributes) {
-				attributeRegex.lastIndex = -1
 				console.log(attr, attr.textContent)
 
 				const text = attr.textContent
 				/**
-				 * @type {{start: number, end: number, type: "attribute" | "removeBackslash", value: string}[]}
+				 * @type {{start: number, end: number, type: "attribute" | "state" | "removeBackslash", value: string}[]}
 				 */
-				const matched = []
-				while((regexResult = attributeRegex.exec(text)) !== null) {
-					if (! regexResult[1]) {
-						matched.push({start: regexResult.index, end: regexResult.index + regexResult[0].length, type: "attribute", value: regexResult[3]})
-					} else {
-						matched.push({start: regexResult.index, end: regexResult.index + regexResult[0].length, type: "removeBackslash", value: regexResult[0]})
-					}
-				}
+				const matched = applyRegexOn(text)
 
 				matched.forEach(match => {
+					const attributeName = attr.name.startsWith("c-") ? attr.name.substring(2) : attr.name
 					if (match.type === "attribute") {
-						this.reactiveObservers.attributes[match.value] ??= []
-						if (attr.name.startsWith("on") && attr.textContent.trim() === `@A.${match.value}`) {
-							const eventName = attr.name.substring(2)
-							node.addEventListener(eventName, event => {
-								switch (node.type) {
-									case "color":
-										this.setAttribute(match.value, utils.color2hex(node.value))
-										break
-									default:
-										this.setAttribute(match.value, node.value)
-								}
-							}, {passive: true})
-							node.setAttribute(attr.name, `/* setAttribute(${eventName}, this.value) */`)
-							switch (node.type) {
-								case "color":
-									node.setAttribute("value", utils.color2hex(this.getAttribute(match.value)))
-									break
-								default:
-									node.setAttribute("value", this.getAttribute(match.value))
+						if (attributeName.startsWith("on")) {
+
+							const eventName = attributeName.substring(2)
+							if (attr.textContent.trim() === `@A.${match.value}`) {
+
+								node.addEventListener(eventName, event => {
+									this.setAttribute(match.value, cleanAttributeValue(node.type, node.value))
+								}, {passive: true})
+
+							} else if (attr.textContent.replaceAll(" ", "").startsWith(`@A.${match.value}=`)) {
+
+								let newValue = attr.textContent.substring(attr.textContent.indexOf("=") + 1).trim()
+								if (newValue.startsWith("'") && newValue.endsWith("'")) {newValue = newValue.substring(1, newValue.length - 1)}
+								node.addEventListener(eventName, event => {
+									this.setAttribute(match.value, newValue)
+								}, {passive: true})
+
+							} else {
+								throw new Error(`Don't know how to process event attribute value "${attr.value}"`)
 							}
+
+							node.setAttribute(attr.name, `/* ${attr.value} */`)
+							this.reactiveObservers.attributes[match.value] ??= []
+							if (node instanceof HTMLInputElement) {
+								node.setAttribute("value", cleanAttributeValue(node.type, this.getAttribute(match.value)))
+								this.reactiveObservers.attributes[match.value].push(() => {
+									const cleanValue = cleanAttributeValue(node.type, this.getAttribute(match.value))
+									node.setAttribute("value", cleanValue)
+									node.value = cleanValue
+								})
+							}
+
 						} else {
+							this.reactiveObservers.attributes[match.value] ??= []
 							this.reactiveObservers.attributes[match.value].push(() => {
 								let builtValue = ""
 								let lastIndex = 0
@@ -305,25 +387,27 @@ export default class Cell extends HTMLElement {
 									lastIndex = match2.end
 								})
 								builtValue += text.substring(lastIndex)
-								node.setAttribute(attr.name, builtValue)
+								node.setAttribute(attributeName, builtValue)
 							})
 						}
+					} else if (match.type === "state") {
+						// TODO
 					}
 				})
 			}
 		}
 	}
 	generateReactiveObservers() {
-		const firstTime = Object.keys(this.reactiveObservers.attributes).length === 0
+		const firstTime = Object.keys(this.reactiveObservers.attributes).length === 0 && Object.keys(this.reactiveObservers.states).length === 0
 		const recursiveVisit = node => {
-			this.registerReactiveObserversFor(node)
+			this.#registerReactiveObserversFor(node)
 			let children = [...node.childNodes]
 			if (!firstTime) {
 				children.forEach(child => {if (child instanceof Text) {child.textContent = child.textContent.replaceAll("@", "\\@")}})
 			}
 			children.forEach(child => recursiveVisit(child))
 		}
-		if (this.shadowRoot) {this.registerReactiveObserversFor(this)}
+		if (this.shadowRoot) {this.#registerReactiveObserversFor(this)}
 		recursiveVisit(this.body)
 	}
 
@@ -388,3 +472,14 @@ export default class Cell extends HTMLElement {
 		return customElementDefinition
 	}
 }
+
+/*
+start          | delete ']'  | replace '[' -> '.' | remove left dot | goal
+.test          | .test       | .test              | test            | test
+.test.a        | .test.a     | .test.a            | test.a          | test.a
+.test.a.b      | .test.a.b   | .test.a.b          | test.a.b        | test.a.b
+.test.b.0      | .test.b.0   | .test.b.0          | test.b.0        | test.b.0
+.test.b[0]     | .test.b[0   | .test.b.0          | test.b.0        | test.b.0
+[test].bia[0]  | [test.bia[0 | .test.bia.0        | test.bia.0      | test.bia.0
+[test][bia][0] | [test[bia[0 | .test.bia.0        | test.bia.0      | test.bia.0
+ */

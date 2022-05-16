@@ -107,12 +107,12 @@ export const nullDeepMerge = (...inputs) => {
 	return result;
 }
 
+const canvasCtx = document.createElement('canvas').getContext('2d');
 /**
  * @param {string} str
  * @returns {string}
  */
 export const color2hex = str => {
-	const ctx = document.createElement('canvas').getContext('2d');
-	ctx.fillStyle = str;
-	return ctx.fillStyle;
+	canvasCtx.fillStyle = str;
+	return canvasCtx.fillStyle;
 }

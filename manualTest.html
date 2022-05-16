@@ -6,62 +6,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
 <body>
-    <script type="module">
-        import Cell from "./src/Cell.js"
+<!--    <script type="module">-->
+<!--        import Cell from "./src/Cell.js"-->
 
-        class Test extends Cell {
-            static styleSheet = '@import "./other.css"'
-            static template = "src/truc.html"
-            static attributes = ["my-color", "title", "text", "test"]
+<!--        class Test extends Cell {-->
+<!--            static styleSheet = '@import "./other.css"'-->
+<!--            static template = "src/truc.html"-->
+<!--            static attributes = ["my-color", "title", "text", "test"]-->
 
-            static observers = {
-				attributes: {
-					testa(val) {this.body.querySelector("#testa").innerText = `testa: ${val}`},
-					"my-color": function (val, prev) {
-						const p = this.body.querySelector("#currentColor")
-                        p.style.color = prev
-                        p.textContent = `current color : ${val}, previous color : ${prev}`
-					},
-					"my-back": function (val, prev) {
-						const p = this.body.querySelector("#currentBack")
-						p.style.backgroundColor = prev
-						p.textContent = `current back : ${val}, previous back : ${prev}`
-					}
-                }
-            }
-        }
-        Cell.register(Test)
-    </script>
-
-    <cell-test title="a working title" my-color="blue" text="3" test="zzrot" testa="'attribut nommé testa'" my-back="white"></cell-test>
-
-<!--<script type="module">-->
-<!--    import State from "./src/State.js"-->
-
-<!--    /**-->
-<!--     * @type {State~observerTree}-->
-<!--     */-->
-<!--    const observers = {-->
-<!--        1: {-->
-<!--			[State.leaf]: (nev, old) => console.log(`myObj[1] changed from ${old} to ${nev}`),-->
-<!--            // 2: (nev, old) => console.log(`myObj[1][2] changed from ${old} to ${nev}`)-->
+<!--            static observers = {-->
+<!--				attributes: {-->
+<!--					testa(val) {this.body.querySelector("#testa").innerText = `testa: ${val}`},-->
+<!--					"my-color": function (val, prev) {-->
+<!--						const p = this.body.querySelector("#currentColor")-->
+<!--                        p.style.color = prev-->
+<!--                        p.textContent = `current color : ${val}, previous color : ${prev}`-->
+<!--					},-->
+<!--					"my-back": function (val, prev) {-->
+<!--						const p = this.body.querySelector("#currentBack")-->
+<!--						p.style.backgroundColor = prev-->
+<!--						p.textContent = `current back : ${val}, previous back : ${prev}`-->
+<!--					}-->
+<!--                }-->
+<!--            }-->
 <!--        }-->
-<!--    }-->
+<!--        Cell.register(Test)-->
+<!--    </script>-->
 
-<!--    const state = State.create({}, observers)-->
-<!--    globalThis.state = state-->
-<!--	globalThis.State = State-->
-<!--    state[1] = {2: "lol"}-->
+<!--    <cell-test title="a working title" my-color="blue" text="3" test="zzrot" testa="'attribut nommé testa'" my-back="#bbffbb"></cell-test>-->
 
-<!--	const a = state[1].addObservers({2: (nev, old) => console.log(`myObj[1][2] changed from ${old} to ${nev}`)})-->
-<!--	// state.addObservers({1: {2: (nev, old) => console.log(`myObj[1][2] changed from ${old} to ${nev}`)}})-->
-<!--	state[1][2] = "b"-->
+<script type="module">
+    import State from "./src/State.js"
 
-<!--    console.log(state[1] === state[1])-->
-<!--	console.log(state[1][State.isState])-->
-<!--	console.log(state[1][State.state])-->
-<!--	console.log(state[1] === a)-->
+    /**
+     * @type {State~observerTree}
+     */
+    const observers = {
+        1: {
+			[State.leaf]: (nev, old) => console.log(`myObj[1] changed from ${old} to ${nev}`),
+            // 2: (nev, old) => console.log(`myObj[1][2] changed from ${old} to ${nev}`)
+        }
+    }
 
-<!--</script>-->
+    const state = State.create({}, observers)
+    globalThis.state = state
+	globalThis.State = State
+    state[1] = {2: "lol"}
+
+	const a = state[1].addObservers({2: (nev, old) => console.log(`myObj[1][2] changed from ${old} to ${nev}`)})
+	// state.addObservers({1: {2: (nev, old) => console.log(`myObj[1][2] changed from ${old} to ${nev}`)}})
+	state[1][2] = "b"
+
+    console.log(state[1] === state[1])
+	console.log(state[1][State.isState])
+	console.log(state[1][State.state])
+	console.log(state[1] === a)
+
+</script>
 </body>
 </html>

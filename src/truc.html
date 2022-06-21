@@ -1,9 +1,28 @@
-<div style="color: @my-color;">
-    <h1>@title</h1>
-    1 2 @text 4 5
+<div style="color: @A.my-color; background-color: @A.my-back">
+    <h1>@A.title</h1>
+    <p id="currentColor"></p>
+    <p id="currentBack"></p>
+    1 2 @A.text 4 5
     <br/>
-    \@test = @test
     <br/>
-    @testa
-    <p id="testa"></p>
+    <br/>
+    \@test = @S.test
+    \@test.a = @S.test.a
+    \@test.a.b = @S.test.a.b
+    \@test.b = @S.test.b
+    \@test.b.0 = @S.test.b.0
+    \@test.b[0] = @S.test.b[0]
+    <br/>
+    <br/>
+    <br/>
+    @A.testa
+    <br/>
+    <span id="testa"></span>
+    <br/>
+    <br/>
+    <label>color:<input type="color" onchange="@A.my-color"></label>
+    <label>background:<input type="color" onchange="@A.my-back"></label>
+    <label>title:<input type="text" onkeyup="@A.title"></label>
+    <label>text:<input type="text" onkeyup="@A.text"></label>
+    <label>testa:<input type="text" onkeyup="@A.testa"></label>
 </div>

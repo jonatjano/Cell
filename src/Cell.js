@@ -1,4 +1,4 @@
-import {deepFreeze, toSkewerCase} from "./utils.js"
+import * as utils from "./utils.js"
 
 /**
  * @typedef {object} Cell~Observer
@@ -12,8 +12,8 @@ import {deepFreeze, toSkewerCase} from "./utils.js"
  */
 /**
  * @callback Cell~attributeChangedCallbackType
- * @param {string} oldValue
  * @param {string} newValue
+ * @param {string} oldValue
  */
 
 const reactiveSlot = Symbol("cellReactiveSlot")
@@ -105,9 +105,6 @@ export default class Cell extends HTMLElement {
 			this.#body.append(this.constructor.template.cloneNode(true))
 		}
 		this.generateReactiveObservers()
-		this.generateReactiveObservers()
-		this.generateReactiveObservers()
-		this.generateReactiveObservers()
 
 		this.state = state
 	}
@@ -132,7 +129,7 @@ export default class Cell extends HTMLElement {
 	}
 
 	/**
-     * @param {{} | null} newState
+     * @param {State | stateProxy | Object | null} newState
      */
 	set state(newState) {
 		// TODO
@@ -184,8 +181,8 @@ export default class Cell extends HTMLElement {
      * @param {string} newValue the attribute's new value
      */
 	attributeChangedCallback(attributeName, oldValue, newValue) {
-		this?.constructor?.observers?.attributes?.[attributeName]?.call?.(this, oldValue, newValue)
-		this?.reactiveObservers?.attributes?.[attributeName]?.forEach(entry => typeof entry === "function" ? entry(oldValue, newValue) : entry.textContent = newValue)
+		this?.constructor?.observers?.attributes?.[attributeName]?.call?.(this, newValue, oldValue)
+		this?.reactiveObservers?.attributes?.[attributeName]?.forEach(entry => typeof entry === "function" ? entry(newValue, oldValue) : entry.textContent = newValue)
 	}
 
 	/**
@@ -204,7 +201,7 @@ export default class Cell extends HTMLElement {
 	 * @return void
 	 */
 	registerReactiveObserversFor(node) {
-		const attributeRegex = /(\\+)?(@([\w-]+))/g
+		const attributeRegex = /(\\+)?(@A.([\w-]+))/g
 		/**
 		 * @type {RegExpExecArray}
 		 */
@@ -275,21 +272,42 @@ export default class Cell extends HTMLElement {
 				matched.forEach(match => {
 					if (match.type === "attribute") {
 						this.reactiveObservers.attributes[match.value] ??= []
-						this.reactiveObservers.attributes[match.value].push(() => {
-							let builtValue = ""
-							let lastIndex = 0
-							matched.forEach(match2 => {
-								builtValue += text.substring(lastIndex, match2.start)
-								if (match2.type === "attribute") {
-									builtValue += this.getAttribute(match2.value)
-								} else if (match2.type === "removeBackslash") {
-									builtValue += match2.value.substring(1)
+						if (attr.name.startsWith("on") && attr.textContent.trim() === `@A.${match.value}`) {
+							const eventName = attr.name.substring(2)
+							node.addEventListener(eventName, event => {
+								switch (node.type) {
+									case "color":
+										this.setAttribute(match.value, utils.color2hex(node.value))
+										break
+									default:
+										this.setAttribute(match.value, node.value)
 								}
-								lastIndex = match2.end
+							}, {passive: true})
+							node.setAttribute(attr.name, `/* setAttribute(${eventName}, this.value) */`)
+							switch (node.type) {
+								case "color":
+									node.setAttribute("value", utils.color2hex(this.getAttribute(match.value)))
+									break
+								default:
+									node.setAttribute("value", this.getAttribute(match.value))
+							}
+						} else {
+							this.reactiveObservers.attributes[match.value].push(() => {
+								let builtValue = ""
+								let lastIndex = 0
+								matched.forEach(match2 => {
+									builtValue += text.substring(lastIndex, match2.start)
+									if (match2.type === "attribute") {
+										builtValue += this.getAttribute(match2.value)
+									} else if (match2.type === "removeBackslash") {
+										builtValue += match2.value.substring(1)
+									}
+									lastIndex = match2.end
+								})
+								builtValue += text.substring(lastIndex)
+								node.setAttribute(attr.name, builtValue)
 							})
-							builtValue += text.substring(lastIndex)
-							node.setAttribute(attr.name, builtValue)
-						})
+						}
 					}
 				})
 			}
@@ -315,15 +333,15 @@ export default class Cell extends HTMLElement {
      *      - will be transformed to skewer-case using {@link toSkewerCase}
      *      - if only one word, will prepend "cell-"
      *      - spec : https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name
-     * @param {typeof Cell} customElementDefinition a class extending Cell (the class itself, not an instance of it)
+     * @param {Cell.constructor} customElementDefinition a class extending Cell (the class itself, not an instance of it)
      * @throws {TypeError} if customElementDefinition is not a class extending Cell
      * @throws {TypeError} if shadowRootType is not a valid value
      * @return {Promise<typeof Cell>} the customElementDefinition parameter with the tagName corrected if needed
      */
 	static async register(customElementDefinition) {
 		let tagName = Object.hasOwn(customElementDefinition, "tagName") ?
-			toSkewerCase(customElementDefinition.tagName) :
-			toSkewerCase(customElementDefinition.prototype.constructor.name)
+			utils.toSkewerCase(customElementDefinition.tagName) :
+			utils.toSkewerCase(customElementDefinition.prototype.constructor.name)
 
 		if (! (customElementDefinition.prototype instanceof Cell)) {
 			throw new TypeError("The given class must extends Cell")
@@ -342,7 +360,7 @@ export default class Cell extends HTMLElement {
 			await importHtml(customElementDefinition.template)
 				.then(result => {
 					Object.defineProperty(customElementDefinition, "template", {
-						value: deepFreeze(result),
+						value: utils.deepFreeze(result),
 						writable: false
 					})
 				})
@@ -352,15 +370,15 @@ export default class Cell extends HTMLElement {
 		const observers = Object.hasOwn(customElementDefinition, "observers") ? customElementDefinition.observers : Cell.observers
 		Object.defineProperties(customElementDefinition, {
 			tagName: {
-				value: deepFreeze(tagName),
+				value: utils.deepFreeze(tagName),
 				writable: false
 			},
 			styleSheet: {
-				value: deepFreeze(styleSheet),
+				value: utils.deepFreeze(styleSheet),
 				writable: false
 			},
 			observers: {
-				value: deepFreeze(observers),
+				value: utils.deepFreeze(observers),
 				writable: false
 			}
 		})

@@ -9,11 +9,11 @@ describe("utils", () => {
 			expect(toSkewerCase("LOL")).to.equal("l-o-l")
 			expect(toSkewerCase("LoL")).to.equal("lo-l")
 		})
-		it("should accept no letter input", function () {
+		it("should accept no letter input", () => {
 			expect(toSkewerCase("123")).to.equal("123")
 			expect(toSkewerCase("1A2B3C")).to.equal("1-a2-b3-c")
 		})
-		it("should throw for non string input", function () {
+		it("should throw for non string input", () => {
 			expect(() => toSkewerCase(true)).to.throw(TypeError)
 			expect(() => toSkewerCase(42)).to.throw(TypeError)
 			expect(() => toSkewerCase({})).to.throw(TypeError)
@@ -75,7 +75,7 @@ describe("utils", () => {
 			expect(() => {input[0][0][0] = 53}).to.throw(TypeError)
 			expect(input[0][0][0]).to.equal(42)
 		})
-		it("should work with recursive data", function () {
+		it("should work with recursive data", () => {
 			const a = {}
 			a.a = a
 			expect(() => deepFreeze(a)).not.to.throw()
@@ -83,7 +83,7 @@ describe("utils", () => {
 			expect(Object.isFrozen(a.a)).to.be.true
 			expect(a.a).to.be.equal(a)
 		})
-		it("should work with deeply recursive data", function () {
+		it("should work with deeply recursive data", () => {
 			const b = {}
 			const c = {b}
 			b.c = c

@@ -1,34 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="">
 <head>
     <meta charset="utf-8" />
     <title>Cell manual Tests</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
 <body>
-<!--    <script type="module">-->
-<!--        import Cell from "./src/Cell.js"-->
-
-<!--        class Test extends Cell {-->
-<!--            static styleSheet = '@import "./other.css"'-->
-<!--            static template = "src/truc.html"-->
-<!--            static attributes = ["my-color", "title", "text", "test"]-->
-
-<!--            static observers = {-->
-<!--				attributes: {-->
-<!--					testa(_,val) {this.body.querySelector("#testa").innerText = `testa: ${val}`}-->
-<!--                }-->
-<!--            }-->
-<!--        }-->
-<!--        Cell.register(Test)-->
-<!--    </script>-->
-
-<!--    <cell-test title="a working title" my-color="blue" text="idk, something, maybe" test="zzrot" testa="testa"></cell-test>-->
-
     <script type="module">
-        import State from "./src/State.js"
+        import Cell from "./src/Cell.js"
 
+        class Test extends Cell {
+            static styleSheet = '@import "./other.css"'
+            static template = "src/truc.html"
+            static attributes = ["my-color", "title", "text", "test"]
 
+            static observers = {
+				attributes: {
+					testa(val) {this.body.querySelector("#testa").innerText = `testa: ${val}`},
+					"my-color": function (val, prev) {
+						const p = this.body.querySelector("#currentColor")
+                        p.style.color = prev
+                        p.textContent = `current color : ${val}, previous color : ${prev}`
+					},
+					"my-back": function (val, prev) {
+						const p = this.body.querySelector("#currentBack")
+						p.style.backgroundColor = prev
+						p.textContent = `current back : ${val}, previous back : ${prev}`
+					}
+                }
+            }
+        }
+        Cell.register(Test)
     </script>
+
+    <cell-test title="a working title" my-color="blue" text="3" test="zzrot" testa="'attribut nommé testa'" my-back="white"></cell-test>
+
+<!--<script type="module">-->
+<!--    import State from "./src/State.js"-->
+
+<!--    /**-->
+<!--     * @type {State~observerTree}-->
+<!--     */-->
+<!--    const observers = {-->
+<!--        1: {-->
+<!--			[State.leaf]: (nev, old) => console.log(`myObj[1] changed from ${old} to ${nev}`),-->
+<!--            // 2: (nev, old) => console.log(`myObj[1][2] changed from ${old} to ${nev}`)-->
+<!--        }-->
+<!--    }-->
+
+<!--    const state = State.create({}, observers)-->
+<!--    globalThis.state = state-->
+<!--	globalThis.State = State-->
+<!--    state[1] = {2: "lol"}-->
+
+<!--	const a = state[1].addObservers({2: (nev, old) => console.log(`myObj[1][2] changed from ${old} to ${nev}`)})-->
+<!--	// state.addObservers({1: {2: (nev, old) => console.log(`myObj[1][2] changed from ${old} to ${nev}`)}})-->
+<!--	state[1][2] = "b"-->
+
+<!--    console.log(state[1] === state[1])-->
+<!--	console.log(state[1][State.isState])-->
+<!--	console.log(state[1][State.state])-->
+<!--	console.log(state[1] === a)-->
+
+<!--</script>-->
 </body>
 </html>
